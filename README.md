@@ -9,7 +9,7 @@ Also reduces the amount of tab, tmux panes, windows, etc.. that you need since e
 This tool is provided as is. YMMV.
 
 > It's like running an infinite number of netcat listeners and a python HTTP server at once. This is brilliant!
-> - Emon Lusk 
+> \- Emon Lusk 
 
 
 ## Compiling
