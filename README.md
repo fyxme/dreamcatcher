@@ -31,6 +31,15 @@ Usage of ./dreamcatcher:
         Port to listen on (default 4444)
 ```
 
+```
+$ ./dreamcatcher -d /tmp
+:: Catcher listening on 127.0.0.1:4444
+:: Serving directory /tmp
+:: HTTP request for file: /tmp/test.txt
+[127.0.0.1:35776] :: $ whoami
+[127.0.0.1:35776] :: root
+```
+
 ## Known bugs and future improvements
 
 It can currently catch multiple reverse shells at once but it doesnt handle them properly. Instead it will switch between them:
@@ -49,6 +58,7 @@ $ go run dreamcatcher.go
 
 ### Todo
 
+- fix bug when no data is sent (ie. add timeout to consider it a reverse shell if nothing happens after x seconds)
 - add menu with prefix
     - prefix ":"
     - action: help, list/ls, switch/s \<id based on list\>
