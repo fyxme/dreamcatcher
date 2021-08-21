@@ -112,15 +112,31 @@ func handleTcpConn(conn net.Conn, directory string) {
     connId := conn.RemoteAddr().String()
 
     buf := make([]byte, 1024)
+
+    // set timeout for first request
+    err := conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
     for {
         n, err := conn.Read(buf)
         if err != nil {
-            return
+            if netErr, ok := err.(net.Error); ! (ok && netErr.Timeout()) {
+                fmt.Println(err)
+                return
+            }
         }
 
         // assume that it can't be a HTTP request after first packet
         // otherwise we might have fp when you cat a file with an http request inside
         if isFirstRequest {
+            err := conn.SetReadDeadline(time.Time{})
+            if err != nil {
+                fmt.Println(err)
+                return
+            }
             isFirstRequest = false
             b := bytes.NewReader(buf)
             bio := bufio.NewReader(b)
