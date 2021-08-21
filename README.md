@@ -58,7 +58,6 @@ $ go run dreamcatcher.go
 
 ### Todo
 
-- fix bug when no data is sent (ie. add timeout to consider it a reverse shell if nothing happens after x seconds)
 - add menu with prefix
     - prefix ":"
     - action: help, list/ls, switch/s \<id based on list\>
