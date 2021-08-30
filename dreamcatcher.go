@@ -34,7 +34,7 @@ func main() {
     flag.IntVar(&port, "p", 4444, "Port to listen on")
 
     var host string
-    flag.StringVar(&host, "h", "127.0.0.1", "Host to listen on")
+    flag.StringVar(&host, "i", "127.0.0.1", "Host to listen on")
 
     var directory string
     flag.StringVar(&directory, "d", ".", "Directory you want to serve files from")
