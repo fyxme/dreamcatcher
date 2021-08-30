@@ -13,6 +13,8 @@ import (
     "strings"
     "flag"
     "path/filepath"
+
+    "github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 const (
@@ -37,14 +39,17 @@ func main() {
     var directory string
     flag.StringVar(&directory, "d", ".", "Directory you want to serve files from")
 
+    var verbose bool
+    flag.BoolVar(&verbose, "v", false, "Verbose mode")
+
     flag.Parse()
 
     checkDirectoryPath(directory)
 
-    startListener(host, port, directory)
+    startListener(host, port, directory, verbose)
 }
 
-func startListener(host string, port int, directory string) {
+func startListener(host string, port int, directory string, verbose bool) {
     ipPort := fmt.Sprintf("%s:%d",host,port)
     // Listen for incoming connections.
     l, err := net.Listen(CONN_TYPE, ipPort)
@@ -54,7 +59,33 @@ func startListener(host string, port int, directory string) {
     }
     // Close the listener when the application closes.
     defer l.Close()
+
     fmt.Printf(":: Catcher listening on %s\n:: Serving directory %s\n", ipPort, directory)
+
+    if verbose {
+        fmt.Println(":: Serving the following files:")
+    }
+
+    files := make([]string, 0)
+    err = filepath.Walk(directory,
+    func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+        if info.IsDir() {
+            return nil
+        }
+        if verbose {
+            fmt.Println("- ", path)
+        }
+        files = append(files, path)
+        return nil
+    })
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
+    }
+
     for {
         // Listen for an incoming connection.
         conn, err := l.Accept()
@@ -63,11 +94,11 @@ func startListener(host string, port int, directory string) {
             os.Exit(1)
         }
         // Handle connections in a new goroutine.
-        go handleTcpConn(conn, directory)
+        go handleTcpConn(conn, &files)
     }
 }
 
-func handleHTTPRequest(req *http.Request, conn net.Conn, directory string) {
+func handleHTTPRequest(req *http.Request, conn net.Conn, files *[]string) {
     fp := req.URL.EscapedPath()
 
     // Note: This means files with . at the end won't work..
@@ -75,10 +106,18 @@ func handleHTTPRequest(req *http.Request, conn net.Conn, directory string) {
     // can be updated later if need be
     fp = strings.Trim(fp, "./")
 
-    fp = filepath.Join(directory, fp)
-    fmt.Printf(":: HTTP request for file: %s \n", fp)
+    // case insensitive
+    found_files := fuzzy.FindFold(fp, *files)
+    fmt.Printf(":: HTTP request for %s, found files %v\n", fp, found_files)
+    //    fp = filepath.Join(directory, fp)
+    //fmt.Printf(":: HTTP request for file: %s \n", fp)
 
-    file, err := os.Open(fp)
+    if len(found_files) == 0 {
+        conn.Write([]byte("HTTP/1.1 404 NOT FOUND\n\n\n"))
+        return
+    }
+
+    file, err := os.Open(found_files[0])
     if err != nil {
         fmt.Println(err)
         _, err = conn.Write([]byte("HTTP/1.1 404 NOT FOUND\n\n\n"))
@@ -103,7 +142,7 @@ func handleHTTPRequest(req *http.Request, conn net.Conn, directory string) {
     _, err = conn.Write([]byte("\n\n"))
 }
 
-func handleTcpConn(conn net.Conn, directory string) {
+func handleTcpConn(conn net.Conn, files *[]string) {
 
     defer conn.Close()
     isFirstRequest := true
@@ -143,7 +182,7 @@ func handleTcpConn(conn net.Conn, directory string) {
             req, err := http.ReadRequest(bio)
 
             if err == nil {
-                handleHTTPRequest(req, conn, directory)
+                handleHTTPRequest(req, conn, files)
                 return
             }
         }
