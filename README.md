@@ -20,15 +20,15 @@ go build dreamcatcher.go
 ## Usage
 
 ```
-$ ./dreamcatcher -h
-flag needs an argument: -h
-Usage of ./dreamcatcher:
+$ dreamcatcher -h
+Usage of dreamcatcher:
   -d string
         Directory you want to serve files from (default ".")
-  -h string
+  -i string
         Host to listen on (default "127.0.0.1")
   -p int
         Port to listen on (default 4444)
+  -v    Verbose mode
 ```
 
 ```
